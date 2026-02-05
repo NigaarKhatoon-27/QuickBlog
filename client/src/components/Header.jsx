@@ -1,6 +1,6 @@
 import React from 'react'
 import assets from '../assets/assets.js'
-import { useAppContext } from '../context/appContext.jsx'
+import { useAppContext } from '../context/AppContext.jsx'
 import { useRef } from 'react'
 
 

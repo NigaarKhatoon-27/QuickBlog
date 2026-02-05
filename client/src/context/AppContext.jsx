@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useEffect } from "react";
 
+
 axios.defaults.baseURL
  = import.meta.env.VITE_BASE_URL;
 
