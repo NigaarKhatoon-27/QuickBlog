@@ -3,13 +3,27 @@ import { comments_data } from '../../assets/assets'
 import { useState , useEffect } from 'react'
 import CommentTableItem from '../../components/admin/CommentTableItem'
 import assets from '../../assets/assets'
+import { useAppContext } from '../../context/AppContext'
 
 const Comments = () => {
   const [comments , setComments] = useState([]);
   const [filter , setFilter] = useState("Not Approved");
 
+  const {axios} = useAppContext();
+
   const fetchComments = async () => {
-    setComments(comments_data)
+    try {
+      const { data } = await axios.get('/api/admin/comments');
+      if (data.success) {
+        setComments(data.comments);
+      }
+      else {
+        toast.error(data.message);
+      }
+  }
+    catch (error) {
+      toast.error(error.message);
+    }
   }
   useEffect(()=>{
     fetchComments()

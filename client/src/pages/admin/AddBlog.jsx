@@ -1,11 +1,18 @@
 
 
-
 import React, { useState, useRef, useEffect } from 'react'
 import assets, { blogCategories } from '../../assets/assets'
 import Quill from 'quill'
+import { useAppContext } from '../../context/appContext.jsx'
+import toast from 'react-hot-toast'
+import {parse} from 'marked'
+
 
 const AddBlog = () => {
+  const { axios } = useAppContext()
+  const [isAdding, setIsAdding] = useState(false)
+  const [loading, setLoading] = useState(false)
+
   const editorRef = useRef(null)
   const quillRef = useRef(null)
 
@@ -15,10 +22,67 @@ const AddBlog = () => {
   const [category, setCategory] = useState('Startup')
   const [isPublished, setIsPublished] = useState(false)
 
-  const generateContent = async () => {}
+  const generateContent = async () => {
+    if(!title)  return toast.error('Please enter the title to generate content')
+    try {
+      setLoading(true)
+      const { data } = await axios.post('/api/blog/generate' , {prompt: title})
+      if(data.success) {
+        quillRef.current.root.innerHTML = parse(data.content)
+      }
+      else {
+        toast.error(data.message)
+      }
+}
+catch (error) {
+toast.error(error.message);
+}
+finally {
+  setLoading(false)
+}
+  }
+
 
   const onSubmitHandler = async (e) => {
+    
+
+    try {
+      setIsAdding(true)
+      
     e.preventDefault()
+       
+    
+
+      const blog = {
+        title,
+        subTitle,
+        description: quillRef.current?.root.innerHTML,
+        category,
+        isPublished,
+      }
+
+      const formData = new FormData()
+      formData.append('image', image)
+      formData.append('blog', JSON.stringify(blog))
+
+      const { data } = await axios.post('/api/blog/add', formData)
+
+      if (data.success) {
+        toast.success(data.message)
+        setImage(null)
+        setTitle('')
+        setSubTitle('')
+        setCategory('Startup')
+        setIsPublished(false)
+        quillRef.current.root.innerHTML = ''
+      } else {
+        toast.error(data.message)
+      }
+    } catch (error) {
+      toast.error(error.message)
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   useEffect(() => {
@@ -73,8 +137,12 @@ const AddBlog = () => {
         <p className='mt-4'>Blog Description</p>
         <div className='max-w-lg h-74 pb-16 sm:pb-10 pt-2 relative'>
           <div ref={editorRef}></div>
-
-          <button
+          {loading && (
+            <div className = 'absolute right-0 top-0 bottom-0 left-0 flex items-center justify-center bg-black/10 mt-2'>
+              <div className ='w-8 h-8 rounded-full border-2 border-t-white animate-spin'>
+                </div>
+                </div>)}
+          <button disabled = {loading}
             type='button'
             onClick={generateContent}
             className='absolute bottom-1 right-2 text-xs text-white bg-black/70 px-4 py-1.5 rounded hover:underline cursor-pointer'
@@ -82,20 +150,36 @@ const AddBlog = () => {
             Generate with AI
           </button>
         </div>
+
         <p className='mt-4'>Blog Category</p>
-        <select  onChange ={e => setCategory(e.target.value)} name ='category' className ='mt-2 px-3 py-2 border text-gray-500 border-gray-300 rounded outline-none'>
-          <option value ="" >Select Category</option>
-          {blogCategories.map((item, index) => {
-             return <option key={index} value={item}>
+        <select
+          onChange={(e) => setCategory(e.target.value)}
+          className='mt-2 px-3 py-2 border text-gray-500 border-gray-300 rounded outline-none'
+        >
+          {blogCategories.map((item, index) => (
+            <option key={index} value={item}>
               {item}
             </option>
-          })}
+          ))}
         </select>
-        <div className ='flex gap-2 mt-4'>
+
+        <div className='flex gap-2 mt-4'>
           <p>Publish Now</p>
-          <input type ='checkbox' checked ={isPublished} className ='scale-125 cursor-pointer' onChange ={e => setIsPublished(e.target.checked)}/>
+          <input
+            type='checkbox'
+            checked={isPublished}
+            className='scale-125 cursor-pointer'
+            onChange={(e) => setIsPublished(e.target.checked)}
+          />
         </div>
-        <button type ='submit' className ='mt-8 w-40 h-10 bg-primary text-white rounded cursor-pointer text-sm'>Add Blog</button>
+
+        <button
+          disabled={isAdding}
+          type='submit'
+          className='mt-8 w-40 h-10 bg-primary text-white rounded cursor-pointer text-sm'
+        >
+          {isAdding ? 'Adding Blog...' : 'Add Blog'}
+        </button>
       </div>
     </form>
   )
